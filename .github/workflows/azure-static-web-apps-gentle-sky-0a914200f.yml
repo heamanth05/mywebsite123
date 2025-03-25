@@ -18,12 +18,25 @@ jobs:
        id-token: write
        contents: read
     steps:
-      - uses: actions/checkout@v3
+      # Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v3
         with:
           submodules: true
           lfs: false
+
+      # (Optional) Install dependencies if you need to build the app
+      # Uncomment and modify if you're using a build tool like npm, yarn, etc.
+      # - name: Install Dependencies
+      #   run: |
+      #     npm install
+      #     npm run build
+
+      # Install OIDC Client from Core Package
       - name: Install OIDC Client from Core Package
         run: npm install @actions/core@1.6.0 @actions/http-client
+
+      # Get ID Token for authentication with Azure
       - name: Get Id Token
         uses: actions/github-script@v6
         id: idtoken
@@ -32,19 +45,18 @@ jobs:
                const coredemo = require('@actions/core')
                return await coredemo.getIDToken()
            result-encoding: string
+
+      # Azure Static Web App Deployment
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_GENTLE_SKY_0A914200F }}
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_GENTLE_SKY_0A914200F }}  # Ensure this secret is set in your repository
           action: "upload"
-          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
-          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
-          app_location: "/" # App source code path
-          api_location: "" # Api source code path - optional
-          output_location: "." # Built app content directory - optional
+          app_location: "/" # Source code location (root directory for static sites)
+          api_location: ""  # Empty if you don't have an API
+          output_location: "."  # Location of the built app (same as app_location for a static app)
           github_id_token: ${{ steps.idtoken.outputs.result }}
-          ###### End of Repository/Build Configurations ######
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
